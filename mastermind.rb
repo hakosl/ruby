@@ -4,13 +4,14 @@
 module Mastermind
   class Pin
     attr_reader :color
-    def initialize(color)
+    def initialize color
       @color = color
     end
   end
 
+
   class Row
-    def initialize(colors)
+    def initialize colors
       @row = colors.map do |color|
         Pin.new(color)
       end
@@ -27,17 +28,17 @@ module Mastermind
 
   class Board
     attr_reader :correct_row
-    def initialize(correct_row)
+    def initialize correct_row
       @correct_row = Row.new(correct_row)
       @guess_rows = []
     end
 
-    def append_guess(guess)
+    def append_guess guess
       @guess_rows << Row.new(guess)
     end
 
     #checking how many pins in the row matches the correct pins and colors so that we can give feedback to the player
-    def compare_rows(guess = -1)
+    def compare_rows guess = -1
       right_color = 0
       right_spot = 0 
 
@@ -48,6 +49,21 @@ module Mastermind
       end
       right_color = ((@guess_rows[guess].get_pins) & (@correct_row.get_pins)).count
       [right_spot, right_color]
+    end
+
+    #this is for the bot so it can analyze past feedback from the board
+    def compare_all_rows
+      @guess_rows.map do |guess|
+        right_color = 0 
+        right_spot = 0
+        guess.get_pins.each.with_index do |pin, index|
+          if pin == @correct_row.get_pins[index]
+            right_spot += 1
+          end
+        end
+        right_color = (guess.get_pins & @correct_row.get_pins).count
+        [right_spot, right_color - right_spot, guess]
+      end
     end
 
     #these two dont do similar things
@@ -65,14 +81,9 @@ module Mastermind
 
   class Player
     attr_reader :name, :player_type
-    def initialize
-      print "Your name: "
-      @name = gets.chomp
-      print"\n"
-    end
 
-    #used to determin if a row is equal to the 
-    def compare_input(guess=-1, board)
+    #used to determine if a row is equal to the 
+    def compare_input guess=-1, board
       #compare the last row to the first
       output = board.compare_rows(guess)
       puts "#{output[0]} correct pins, #{output[1]} pins off the right color"
@@ -87,9 +98,12 @@ module Mastermind
   class HumanPlayer < Player
     def initialize
       @player_type = "human"
-      super
+      print "Your name: "
+      @name = gets.chomp
+      print"\n"
     end
-    def prompt_input
+
+    def prompt_input board
       correct_answer = false
 
       puts "#{self.name} please guess the code"
@@ -109,7 +123,7 @@ module Mastermind
       gets.chomp.split("")
     end
 
-    def sanitize_input(input)
+    def sanitize_input input
       input.each do |x|
         if (1..6).include? x
           puts "Pshych that's some wrong numbahs"
@@ -119,6 +133,7 @@ module Mastermind
       true
     end
   end
+
 
   class ComputerPlayer < Player
     def initialize
@@ -132,9 +147,21 @@ module Mastermind
       output
     end
 
-    def prompt_input
+    def prompt_input board
+      feedback = board.compare_all_rows
+      if feedback
+        random_probability = feedback.map.with_index do |row, index|
+          row[2].get_pins.to_i * row[1] + row[2].get_pins.to_i * row[0] * 8
+        end
+      else
+        feedback = Array.new(4) {"#{rand (1..6)}"}
+      end
+      random_probability.map do |row|
+        "#{rand row}"
+      end
     end
   end
+
 
   def play
     puts "Choos a mode: 1. two player mode 2. you make the code, computer guesses 3. computer 
@@ -152,14 +179,14 @@ module Mastermind
       mastermind = ComputerPlayer.new
       guesser = HumanPlayer.new
     end
-    new_game = Board.new(mastermind.new_game_code)
+    new_game = Board.new mastermind.new_game_code
 
     #this is where the "game" is run, 12 tries, the guesser loses if he cant guess it
     #assign a standard value to winner, if the if clause is not activated, mastermind wins,
     #else if the guesser manages to guess the correct combination the winner is set to guesser
     winner = mastermind
     until new_game.guess_length >= 12
-      new_game.append_guess(guesser.prompt_input)
+      new_game.append_guess(guesser.prompt_input new_game)
       if guesser.compare_input(new_game) == true
         winner = guesser
         break
@@ -170,6 +197,6 @@ module Mastermind
   end
 end
 
-include Mastermind
 
+include Mastermind
 play
