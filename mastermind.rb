@@ -149,19 +149,31 @@ module Mastermind
 
     def prompt_input board
       feedback = board.compare_all_rows
-      if feedback
-        random_probability = feedback.map.with_index do |row, index|
-          row[2].get_pins.to_i * row[1] + row[2].get_pins.to_i * row[0] * 8
+      if not feedback.empty?
+        random_probability = Array.new(4) {Array.new}
+        feedback.each.with_index do |row, row_nr|
+          row.each.with_index do |pin, pin_nr|
+            random_probability[pin_nr] += row[2].get_pins * row[1] + row[2].get_pins[pin_nr] * row[0] * 8
+          end
         end
       else
-        feedback = Array.new(4) {"#{rand (1..6)}"}
+        random_probability = Array.new(4) {(1..6).to_a.map {|n| "#{n}"}}
       end
-      random_probability.map do |row|
-        "#{rand row}"
+      print random_probability
+      #puts "Array deciding shit: #{random_probability}"
+      output = random_probability.map do |row|
+        random_letter_from_given_list row
       end
+
+      puts "the computer guessed: #{output} continue?"
+      gets
+      output
     end
   end
 
+  def random_letter_from_given_list row
+    row[rand row.length]
+  end
 
   def play
     puts "Choos a mode: 1. two player mode 2. you make the code, computer guesses 3. computer 
