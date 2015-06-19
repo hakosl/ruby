@@ -149,17 +149,30 @@ module Mastermind
 
     def prompt_input board
       feedback = board.compare_all_rows
-      if not feedback.empty?
+      real_ai = false
+      puts feedback[2]
+
+      if (not feedback.empty?) && real_ai
         random_probability = Array.new(4) {Array.new}
         feedback.each.with_index do |row, row_nr|
           row.each.with_index do |pin, pin_nr|
-            random_probability[pin_nr] += row[2].get_pins * row[1] + row[2].get_pins[pin_nr] * row[0] * 8
+            puts ""
+            puts "row_nr: #{row_nr}\nrow[2].getpins: #{row[2].get_pins} \n row[0]: #{row[0]}\n row[1]: #{row[1]}"
+            inn = [] << row[2].get_pins * row[1]
+            print inn
+            inn[0] += Array.new(8) {row[2].get_pins[pin_nr] * row[0] }
+            print inn
+            random_probability[pin_nr] = inn
+            #else
+            #  random_probability[pin_nr] = row[2].get_pins * row[1] + row[2].get_pins[pin_nr] * row[0] * 8
+            #end 
           end
         end
+      #happens if the feedback is empty, makes 4 arrays with numbers 1-6
       else
         random_probability = Array.new(4) {(1..6).to_a.map {|n| "#{n}"}}
       end
-      print random_probability
+      puts "random_probability: #{random_probability}"
       #puts "Array deciding shit: #{random_probability}"
       output = random_probability.map do |row|
         random_letter_from_given_list row
@@ -171,7 +184,7 @@ module Mastermind
     end
   end
 
-  def random_letter_from_given_list row
+  def random_letter_from_given_list(row)
     row[rand row.length]
   end
 
@@ -179,7 +192,7 @@ module Mastermind
     puts "Choos a mode: 1. two player mode 2. you make the code, computer guesses 3. computer 
           makes the code, you guess"
     mode = gets.chomp
-    #only mode 1 and 2 is implemented right now
+    #only mode 1 and 3 are implemented right now, and 2 kinda
     #making the right player objects for the game
     if mode == "1"
       mastermind = HumanPlayer.new
